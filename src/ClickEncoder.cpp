@@ -43,22 +43,22 @@
 
 // ----------------------------------------------------------------------------
 
-ClickEncoder::ClickEncoder(uint8_t A, uint8_t B, uint8_t BTN, uint8_t stepsPerNotch, bool active)
-  : pinA(A), pinB(B), pinBTN(BTN), pinsActive(active),
+ClickEncoder::ClickEncoder(uint8_t A, uint8_t B, PinBank* pb, uint8_t BTN, uint8_t stepsPerNotch, bool active)
+  : pinA(A), pinB(B), pinBank(pb), pinBTN(BTN), pinsActive(active),
 	delta(0), last(0), steps(stepsPerNotch), acceleration(0),
     button(Open),
 	doubleClickEnabled(true), accelerationEnabled(true)
 {
   uint8_t configType = (pinsActive == LOW) ? INPUT_PULLUP : INPUT;
-  pinMode(pinA, configType);
-  pinMode(pinB, configType);
-  pinMode(pinBTN, configType);
+  pinBank->pinMode(pinA, configType);
+  pinBank->pinMode(pinB, configType);
+  pinBank->pinMode(pinBTN, configType);
 
-  if (digitalRead(pinA) == pinsActive) {
+  if (pinBank->digitalRead(pinA) == pinsActive) {
     last = 3;
   }
 
-  if (digitalRead(pinB) == pinsActive) {
+  if (pinBank->digitalRead(pinB) == pinsActive) {
     last ^=1;
   }
 }
@@ -81,11 +81,11 @@ void ClickEncoder::service(void)
 #if ENC_DECODER == ENC_FLAKY
   last = (last << 2) & 0x0F;
 
-  if (digitalRead(pinA) == pinsActive) {
+  if (pinBank->digitalRead(pinA) == pinsActive) {
     last |= 2;
   }
 
-  if (digitalRead(pinB) == pinsActive) {
+  if (pinBank->digitalRead(pinB) == pinsActive) {
     last |= 1;
   }
 
@@ -97,11 +97,11 @@ void ClickEncoder::service(void)
 #elif ENC_DECODER == ENC_NORMAL
   int8_t curr = 0;
 
-  if (digitalRead(pinA) == pinsActive) {
+  if (pinBank->digitalRead(pinA) == pinsActive) {
     curr = 3;
   }
 
-  if (digitalRead(pinB) == pinsActive) {
+  if (pinBank->digitalRead(pinB) == pinsActive) {
     curr ^= 1;
   }
 
@@ -135,14 +135,14 @@ void ClickEncoder::service(void)
   {
     lastButtonCheck = now;
 
-    if (digitalRead(pinBTN) == pinsActive) { // key is down
+    if (pinBank->digitalRead(pinBTN) == pinsActive) { // key is down
       keyDownTicks++;
       if (keyDownTicks > (ENC_HOLDTIME / ENC_BUTTONINTERVAL)) {
         button = Held;
       }
     }
 
-    if (digitalRead(pinBTN) == !pinsActive) { // key is now up
+    if (pinBank->digitalRead(pinBTN) == !pinsActive) { // key is now up
       if (keyDownTicks /*> ENC_BUTTONINTERVAL*/) {
         if (button == Held) {
           button = Released;

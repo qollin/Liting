@@ -19,6 +19,7 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include "Arduino.h"
+#include "PinBank.h"
 
 // ----------------------------------------------------------------------------
 
@@ -56,7 +57,7 @@ public:
   } Button;
 
 public:
-  ClickEncoder(uint8_t A, uint8_t B, uint8_t BTN = -1,
+  ClickEncoder(uint8_t A, uint8_t B, PinBank* pinBank, uint8_t BTN = -1,
                uint8_t stepsPerNotch = 1, bool active = LOW);
 
   void service(void);
@@ -97,6 +98,7 @@ public:
 private:
   const uint8_t pinA;
   const uint8_t pinB;
+  PinBank* pinBank;
   const uint8_t pinBTN;
   const bool pinsActive;
   volatile int16_t delta;

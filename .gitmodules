@@ -1,0 +1,3 @@
+[submodule "Libraries/Adafruit-MCP23017-Arduino-Library"]
+	path = Libraries/Adafruit-MCP23017-Arduino-Library
+	url = https://github.com/adafruit/Adafruit-MCP23017-Arduino-Library.git

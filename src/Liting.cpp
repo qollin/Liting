@@ -23,6 +23,7 @@
 #include <ClickEncoder.h>
 #include "Adafruit_NeoPixel.h"
 #include "TimerOne.h"
+#include "ArduinoPinBank.h"
 
 #define PIN 4
 #define LED_COUNT 1
@@ -37,7 +38,8 @@ void rainbow(byte startPosition);
 // Create an instance of the Adafruit_NeoPixel class called "leds".
 // That'll be what we refer to from here on...
 Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800);
-ClickEncoder rotary = ClickEncoder(11, 12);
+ArduinoPinBank arduinoPinBank = ArduinoPinBank();
+ClickEncoder rotary = ClickEncoder(11, 12, &arduinoPinBank);
 uint8_t red = 255;
 
 void timerIsr() {
