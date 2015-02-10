@@ -10,3 +10,6 @@
 [submodule "Libraries/Wire"]
 	path = Libraries/Wire
 	url = https://github.com/qollin/Wire.git
+[submodule "ArduinoCore"]
+	path = ArduinoCore
+	url = https://github.com/qollin/ArduinoCore.git
