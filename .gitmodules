@@ -7,3 +7,6 @@
 [submodule "Libraries/TimerOne"]
 	path = Libraries/TimerOne
 	url = https://github.com/PaulStoffregen/TimerOne.git
+[submodule "Libraries/Wire"]
+	path = Libraries/Wire
+	url = https://github.com/qollin/Wire.git
