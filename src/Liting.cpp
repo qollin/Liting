@@ -20,10 +20,11 @@
   you have linked up.
 */
 #include "WS2812_Definitions.h"
-#include <ClickEncoder.h>
+#include <RotaryEncoder.h>
 #include "Adafruit_NeoPixel.h"
+#include "Adafruit_MCP23017.h"
 #include "TimerOne.h"
-#include "ArduinoPinBank.h"
+#include "MCP23017PinBank.h"
 
 #define PIN 4
 #define LED_COUNT 1
@@ -37,13 +38,16 @@ void rainbow(byte startPosition);
 
 // Create an instance of the Adafruit_NeoPixel class called "leds".
 // That'll be what we refer to from here on...
-Adafruit_NeoPixel leds = Adafruit_NeoPixel(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800);
-ArduinoPinBank arduinoPinBank = ArduinoPinBank();
-ClickEncoder rotary = ClickEncoder(11, 12, &arduinoPinBank);
+Adafruit_NeoPixel leds(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_MCP23017 mcp;
+MCP23017PinBank pinBank = MCP23017PinBank(mcp);
+RotaryEncoder* rotary;
 uint8_t red = 255;
+volatile boolean awakenByInterrupt = false;
 
-void timerIsr() {
-  rotary.service();
+void callback() {
+  //rotary->service();
+  awakenByInterrupt = true;
 }
 
 void setup()
@@ -53,14 +57,83 @@ void setup()
   leds.show();   // ...but the LEDs don't actually update until you call this.
   Serial.begin(9600);
 
+
+  mcp.begin(0);
+  mcp.setupInterrupts(true,false,LOW);
+
+  mcp.pinMode(0, INPUT);
+  mcp.pullUp(0, HIGH);
+  mcp.setupInterruptPin(0, CHANGE);
+
+  mcp.pinMode(1, INPUT);
+  mcp.pullUp(1, HIGH);
+  mcp.setupInterruptPin(1, CHANGE);
+  /*
+  mcp.pinMode(2, INPUT);
+  mcp.pullUp(2, HIGH);
+  mcp.setupInterruptPin(2, FALLING);
+  */
+
+  rotary = new RotaryEncoder(0, 1, &pinBank);
+
+  /*
   Timer1.initialize(1000);
   Timer1.attachInterrupt(timerIsr);
+  */
 }
 
-void loop()
-{
-	int16_t val = rotary.getValue();
+
+int last = 0;
+void handleInterrupt() {
+	  /*
+	  uint8_t pin=mcp.getLastInterruptPin();
+	  uint8_t val=mcp.getLastInterruptPinValue();
+	  Serial.print(pin); Serial.print(": "); Serial.println(val);
+	  */
+      int a = pinBank.digitalRead(0);
+	  int b = pinBank.digitalRead(1);
+	  if (a != b) {
+		  last = a;
+	  } else {
+		  if (a == 0) {
+			  if (last == 1) {
+				  Serial.println("RIGHT");
+			  } else {
+				  Serial.println("LEFT");
+			  }
+		  } else {
+			  if (last == 0) {
+				  Serial.println("RIGHT");
+			  } else {
+				  Serial.println("LEFT");
+			  }
+		  }
+	  }
+	  awakenByInterrupt = false;
+}
+
+void loop() {
+	  // enable interrupts before going to sleep/wait
+	  // And we setup a callback for the arduino INT handler.
+	  //EIFR = (1<< INTF0);
+	  attachInterrupt(0,callback,FALLING);
+
+	  // Simulate a deep sleep
+	  while(!awakenByInterrupt);
+	  // Or sleep the arduino, this lib is great, if you have it.
+	  //LowPower.powerDown(SLEEP_1S, ADC_OFF, BOD_OFF);
+
+	  // disable interrupts while handling them.
+	  detachInterrupt(0);
+
+	  if(awakenByInterrupt) handleInterrupt();
+
+	/*
+	rotary->service();
+	delay(100);
+	int16_t val = rotary->getValue();
     Serial.println(val);
+	*/
 
 	/*
 	uint8_t val = (uint8_t)((exp(sin(millis()/2000.0*PI)) - 0.36787944)*108.0);

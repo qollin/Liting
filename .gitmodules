@@ -13,3 +13,9 @@
 [submodule "ArduinoCore"]
 	path = ArduinoCore
 	url = https://github.com/qollin/ArduinoCore.git
+[submodule "Libraries/PinBank"]
+	path = Libraries/PinBank
+	url = https://github.com/qollin/PinBank.git
+[submodule "Libraries/RotaryEncoder"]
+	path = Libraries/RotaryEncoder
+	url = https://github.com/qollin/RotaryEncoder.git
