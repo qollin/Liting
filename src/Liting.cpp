@@ -25,10 +25,12 @@
 #include "Adafruit_MCP23017.h"
 #include "TimerOne.h"
 #include "MCP23017PinBank.h"
+#include <EEPROM.h>
 
 #define PIN 4
-#define LED_COUNT 1
-uint32_t colors[3] = {0xFF0000, 0x00FF00, 0x555555};
+#define LED_COUNT 150
+#define ROTARY_ENCODER_COUNT 4
+#define PUSH_BUTTON_COUNT 1
 
 uint32_t rainbowOrder(byte position);
 void clearLEDs();
@@ -39,14 +41,14 @@ void rainbow(byte startPosition);
 // Create an instance of the Adafruit_NeoPixel class called "leds".
 // That'll be what we refer to from here on...
 Adafruit_NeoPixel leds(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800);
-Adafruit_MCP23017 mcp;
+Adafruit_MCP23017 mcp = Adafruit_MCP23017();
 MCP23017PinBank pinBank = MCP23017PinBank(mcp);
-RotaryEncoder* rotary;
-uint8_t red = 255;
 volatile boolean awakenByInterrupt = false;
 
+RotaryEncoder* rotaries[ROTARY_ENCODER_COUNT];
+PushButton* pushButton;
+
 void callback() {
-  //rotary->service();
   awakenByInterrupt = true;
 }
 
@@ -57,65 +59,23 @@ void setup()
   leds.show();   // ...but the LEDs don't actually update until you call this.
   Serial.begin(9600);
 
+  pinBank.setup();
 
-  mcp.begin(0);
-  mcp.setupInterrupts(true,false,LOW);
+  for (int i = 0, j = 0; i < ROTARY_ENCODER_COUNT; i++, j += 2) {
+	  rotaries[i] = new RotaryEncoder(j, j + 1, &pinBank);
+	  rotaries[i]->setCap(0, 255);
 
-  mcp.pinMode(0, INPUT);
-  mcp.pullUp(0, HIGH);
-  mcp.setupInterruptPin(0, CHANGE);
+	  pinBank.addInterruptListener(j, rotaries[i]);
+	  pinBank.addInterruptListener(j + 1, rotaries[i]);
+  }
 
-  mcp.pinMode(1, INPUT);
-  mcp.pullUp(1, HIGH);
-  mcp.setupInterruptPin(1, CHANGE);
-  /*
-  mcp.pinMode(2, INPUT);
-  mcp.pullUp(2, HIGH);
-  mcp.setupInterruptPin(2, FALLING);
-  */
-
-  rotary = new RotaryEncoder(0, 1, &pinBank);
-
-  /*
-  Timer1.initialize(1000);
-  Timer1.attachInterrupt(timerIsr);
-  */
-}
-
-
-int last = 0;
-void handleInterrupt() {
-	  /*
-	  uint8_t pin=mcp.getLastInterruptPin();
-	  uint8_t val=mcp.getLastInterruptPinValue();
-	  Serial.print(pin); Serial.print(": "); Serial.println(val);
-	  */
-      int a = pinBank.digitalRead(0);
-	  int b = pinBank.digitalRead(1);
-	  if (a != b) {
-		  last = a;
-	  } else {
-		  if (a == 0) {
-			  if (last == 1) {
-				  Serial.println("RIGHT");
-			  } else {
-				  Serial.println("LEFT");
-			  }
-		  } else {
-			  if (last == 0) {
-				  Serial.println("RIGHT");
-			  } else {
-				  Serial.println("LEFT");
-			  }
-		  }
-	  }
-	  awakenByInterrupt = false;
+  pushButton = new PushButton();
+  pinBank.addInterruptListener(8, pushButton);
 }
 
 void loop() {
 	  // enable interrupts before going to sleep/wait
 	  // And we setup a callback for the arduino INT handler.
-	  //EIFR = (1<< INTF0);
 	  attachInterrupt(0,callback,FALLING);
 
 	  // Simulate a deep sleep
@@ -126,7 +86,18 @@ void loop() {
 	  // disable interrupts while handling them.
 	  detachInterrupt(0);
 
-	  if(awakenByInterrupt) handleInterrupt();
+	  if(awakenByInterrupt) {
+		  pinBank.handleInterrupt();
+		  for (int i = 0; i < LED_COUNT; i++) {
+			  leds.setPixelColor(i, rotaries[0]->getValue(), rotaries[1]->getValue(), rotaries[2]->getValue());
+			  leds.setBrightness(rotaries[3]->getValue());
+			  leds.show();
+		  }
+		  if (pushButton->isPressed()) {
+
+		  }
+		  awakenByInterrupt = false;
+	  }
 
 	/*
 	rotary->service();
