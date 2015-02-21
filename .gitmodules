@@ -1,6 +1,3 @@
-[submodule "Libraries/Adafruit_NeoPixel"]
-	path = Libraries/Adafruit_NeoPixel
-	url = https://github.com/adafruit/Adafruit_NeoPixel.git
 [submodule "Libraries/TimerOne"]
 	path = Libraries/TimerOne
 	url = https://github.com/PaulStoffregen/TimerOne.git
