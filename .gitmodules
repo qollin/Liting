@@ -1,6 +1,3 @@
-[submodule "Libraries/Wire"]
-	path = Libraries/Wire
-	url = https://github.com/qollin/Wire.git
 [submodule "Libraries/PinBank"]
 	path = Libraries/PinBank
 	url = https://github.com/qollin/PinBank.git
