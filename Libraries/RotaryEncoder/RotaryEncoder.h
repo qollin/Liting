@@ -16,6 +16,7 @@ public:
 	RotaryEncoder(uint8_t pinA, uint8_t pinB, PinBank* pinBank);
 	virtual const void handleInterrupt(uint8_t pin, uint8_t value);
 	int getValue() const;
+	void setValue(int _value);
 	void setCap(int minValue, int maxValue);
 private:
 	int cap(int i);

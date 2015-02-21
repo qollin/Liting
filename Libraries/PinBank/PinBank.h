@@ -16,17 +16,4 @@ public:
 	virtual ~InterruptListener() {}
 	virtual const void handleInterrupt(uint8_t pin, uint8_t value) = 0;
 };
-
-class PushButton : public InterruptListener {
-public:
-	virtual ~PushButton() {}
-	virtual const void handleInterrupt(uint8_t pin, uint8_t value) {
-		pressed = value;
-	}
-	const bool isPressed() const {
-		return pressed;
-	}
-private:
-	bool pressed;
-};
 #endif

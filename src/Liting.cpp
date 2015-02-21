@@ -21,16 +21,19 @@
 */
 #include "WS2812_Definitions.h"
 #include <RotaryEncoder.h>
+#include <PushButton.h>
 #include "Adafruit_NeoPixel.h"
 #include "Adafruit_MCP23017.h"
 #include "TimerOne.h"
 #include "MCP23017PinBank.h"
 #include <EEPROM.h>
+#include <stdint.h>
 
-#define PIN 4
-#define LED_COUNT 150
+#define LED_PIN 4
+#define LED_COUNT 1
 #define ROTARY_ENCODER_COUNT 4
 #define PUSH_BUTTON_COUNT 1
+#define EEPROM_VALUES_ADDR 1
 
 uint32_t rainbowOrder(byte position);
 void clearLEDs();
@@ -40,7 +43,7 @@ void rainbow(byte startPosition);
 
 // Create an instance of the Adafruit_NeoPixel class called "leds".
 // That'll be what we refer to from here on...
-Adafruit_NeoPixel leds(LED_COUNT, PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel leds(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_MCP23017 mcp = Adafruit_MCP23017();
 MCP23017PinBank pinBank = MCP23017PinBank(mcp);
 volatile boolean awakenByInterrupt = false;
@@ -48,29 +51,55 @@ volatile boolean awakenByInterrupt = false;
 RotaryEncoder* rotaries[ROTARY_ENCODER_COUNT];
 PushButton* pushButton;
 
+//uint8_t eepromValues[4];
+
 void callback() {
   awakenByInterrupt = true;
 }
+/*
+void loadInitialValuesFromEEPROM() {
+	while (!eeprom_is_ready());
+	cli();
+	for (int i = 0; i < 4; i++) {
+		eepromValues[i] = eeprom_read_byte((uint8_t*)(EEPROM_VALUES_ADDR + i));
+	}
+	sei();
+}
 
-void setup()
-{
+void writeValuesToEEPROM() {
+	while (!eeprom_is_ready());
+	cli();
+	for (int i = 0; i < 4; i++) {
+		eeprom_update_byte((uint8_t*)(EEPROM_VALUES_ADDR + i), eepromValues[i]);
+	}
+	sei();
+}
+*/
+
+void setup() {
   leds.begin();  // Call this to start up the LED strip.
   clearLEDs();   // This function, defined below, turns all LEDs off...
   leds.show();   // ...but the LEDs don't actually update until you call this.
   Serial.begin(9600);
+
+  //loadInitialValuesFromEEPROM();
+
+  Serial.println("loading from eeprom finished");
 
   pinBank.setup();
 
   for (int i = 0, j = 0; i < ROTARY_ENCODER_COUNT; i++, j += 2) {
 	  rotaries[i] = new RotaryEncoder(j, j + 1, &pinBank);
 	  rotaries[i]->setCap(0, 255);
+	  //rotaries[i]->setValue(eepromValues[i]);
 
 	  pinBank.addInterruptListener(j, rotaries[i]);
 	  pinBank.addInterruptListener(j + 1, rotaries[i]);
   }
-
   pushButton = new PushButton();
   pinBank.addInterruptListener(8, pushButton);
+
+  Serial.println("setup finished");
 }
 
 void loop() {
@@ -91,10 +120,15 @@ void loop() {
 		  for (int i = 0; i < LED_COUNT; i++) {
 			  leds.setPixelColor(i, rotaries[0]->getValue(), rotaries[1]->getValue(), rotaries[2]->getValue());
 			  leds.setBrightness(rotaries[3]->getValue());
-			  leds.show();
+			  Serial.print("color: ");
+			  Serial.print(rotaries[0]->getValue());
+			  Serial.print(rotaries[1]->getValue());
+			  Serial.println(rotaries[2]->getValue());
 		  }
+		  leds.show();
 		  if (pushButton->isPressed()) {
-
+			  Serial.println("writing to EEPROM");
+			  //writeValuesToEEPROM();
 		  }
 		  awakenByInterrupt = false;
 	  }
