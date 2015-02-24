@@ -34,6 +34,7 @@
 #define ROTARY_ENCODER_COUNT 4
 #define PUSH_BUTTON_COUNT 1
 #define EEPROM_VALUES_ADDR 1
+#define BUILD_NUMBER 4
 
 uint32_t rainbowOrder(byte position);
 void clearLEDs();
@@ -51,12 +52,12 @@ volatile boolean awakenByInterrupt = false;
 RotaryEncoder* rotaries[ROTARY_ENCODER_COUNT];
 PushButton* pushButton;
 
-//uint8_t eepromValues[4];
+uint8_t eepromValues[4] = {0,0,0,0};
 
 void callback() {
   awakenByInterrupt = true;
 }
-/*
+
 void loadInitialValuesFromEEPROM() {
 	while (!eeprom_is_ready());
 	cli();
@@ -74,7 +75,6 @@ void writeValuesToEEPROM() {
 	}
 	sei();
 }
-*/
 
 void setup() {
   leds.begin();  // Call this to start up the LED strip.
@@ -82,7 +82,9 @@ void setup() {
   leds.show();   // ...but the LEDs don't actually update until you call this.
   Serial.begin(9600);
 
-  //loadInitialValuesFromEEPROM();
+  Serial.print("build "); Serial.println(BUILD_NUMBER);
+
+  loadInitialValuesFromEEPROM();
 
   Serial.println("loading from eeprom finished");
 
@@ -91,7 +93,7 @@ void setup() {
   for (int i = 0, j = 0; i < ROTARY_ENCODER_COUNT; i++, j += 2) {
 	  rotaries[i] = new RotaryEncoder(j, j + 1, &pinBank);
 	  rotaries[i]->setCap(0, 255);
-	  //rotaries[i]->setValue(eepromValues[i]);
+	  rotaries[i]->setValue(eepromValues[i]);
 
 	  pinBank.addInterruptListener(j, rotaries[i]);
 	  pinBank.addInterruptListener(j + 1, rotaries[i]);
@@ -127,8 +129,11 @@ void loop() {
 		  }
 		  leds.show();
 		  if (pushButton->isPressed()) {
+			  for (int i = 0; i < ROTARY_ENCODER_COUNT; i++) {
+				  eepromValues[i] = rotaries[i]->getValue();
+			  }
 			  Serial.println("writing to EEPROM");
-			  //writeValuesToEEPROM();
+			  writeValuesToEEPROM();
 		  }
 		  awakenByInterrupt = false;
 	  }
